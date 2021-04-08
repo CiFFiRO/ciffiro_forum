@@ -1,0 +1,111 @@
+<!-- templates/home.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+  <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+  <script type="text/javascript">
+  $(document).ready(function () {
+    let null_field = true;
+    let form = {nickname: '', password: ''};
+    let errorId = 'errorId';
+    let appendErrorId = 'appendErrorId';
+    let showErrorNow = false;
+    form.csrfmiddlewaretoken = $('input[name="csrfmiddlewaretoken"]').val();
+
+    function updateButtonState() {
+      $('#loginButtonId').prop('disabled', form.nickname.length === 0 || form.password.length === 0);
+    }
+    $('#nicknameInputId').on('input change', function () {
+      form.nickname = this.value;
+      updateButtonState();
+    });
+    $('#passwordInputId').on('input change', function () {
+      form.password = this.value;
+      updateButtonState();
+    });
+    updateButtonState();
+    $('#loginButtonId').on('click', function () {
+      $.post("/login/", form)
+      .done(response => {
+      console.log(response)
+      if (response.ok) {
+        console.log(response.session_hash)
+        Cookies.set('session_hash', response.session_hash, { sameSite: 'strict' })
+        window.location.replace(window.location.origin);
+      } else {
+        if (!showErrorNow) {
+            $(`#${appendErrorId}`).append(`
+            <small id="emailHelp" class="form-text text-danger">Неверный логин или пароль.</small>
+            `);
+            showErrorNow = true;
+        }
+      }})
+      .fail(() => {
+      if (!showErrorNow) {
+        $(`#${appendErrorId}`).append(`
+         <small id="emailHelp" class="form-text text-danger">Нет ответа от сервера.</small>
+        `);
+        showErrorNow = true;
+        }
+      })
+      });
+
+    });
+  </script>
+  <style>
+      .section {
+        font-family: Verdana;
+        font-size: 9pt;
+       }
+       .left-buffer-20 { margin-left:20px; }
+       .left-buffer-10 { margin-left:10px; }
+       .top-buffer-20 { margin-top:20px; }
+       .top-buffer-15 { margin-top:15px; }
+       .top-buffer-10 { margin-top:10px; }
+       .center-position {
+        top: 50%;left: 50%;
+        width:  30em;
+        height:  18em;
+        margin-top: -15em;
+        margin-left: -16em;
+        border: 3px solid #ccc;position:fixed;z-index: 80;
+    }
+  </style>
+</head>
+<body>
+<div class="panel panel-default center-position">
+    <div class="container">
+        <div class="row">
+            <div class="col">
+            <h3 class="form-signin-heading" align="center">Введите Ваш логин и пароль чтобы авторизоваться.</h3>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                {% csrf_token %}
+            <div class="input-group top-buffer-15"><input id="nicknameInputId" type="text" class="form-control" placeholder="Логин"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col" id="appendErrorId">
+                <div class="input-group top-buffer-15"><input id="passwordInputId" type="password" class="form-control" placeholder="Пароль"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col text-center">
+                <div class="btn-group btn-group-lg top-buffer-15" role="group">
+                    <button type="button" class="btn btn-dark" id="loginButtonId">Войти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+
