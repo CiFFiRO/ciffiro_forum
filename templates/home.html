@@ -62,6 +62,22 @@
                   <b class="section">Последнее сообщение</b>
               </div>
           </div>
+            {% for section in sections %}
+          <div class="row">
+              <div class="col-6">
+                  {{ section.name }}
+              </div>
+              <div class="col">
+                  {{ section.number_themes }}
+              </div>
+              <div class="col">
+                  {{ section.number_posts }}
+              </div>
+              <div class="col">
+                  {{ section.date_last_post }}
+              </div>
+          </div>
+            {% endfor %}
         </div>
     </div>
 </div>

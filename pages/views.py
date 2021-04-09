@@ -6,7 +6,7 @@ from django.contrib.auth.views import LogoutView
 from django.http import JsonResponse
 from hashlib import sha256
 import time
-from .models import User, Session, Section
+from .models import User, Session, Section, Theme, Post
 from .form import LoginForm, SectionForm
 
 
@@ -34,6 +34,7 @@ class HomePageView(TemplateView):
         context = super().get_context_data(**kwargs)
         is_user = False
         context['is_admin'] = False
+        context['sections'] = []
         user = user_by_session(self.request)
 
         if user is not None:
@@ -46,6 +47,25 @@ class HomePageView(TemplateView):
             context['head'] = 'user_panel.html'
         else:
             context['head'] = 'welcome.html'
+
+        sections = Section.objects.all()
+        for section in sections:
+            data = {'name': section.name}
+            number_themes = Theme.objects.raw(f'select 1 as id, count(*) as cnt from `forum`.`theme` '
+                                       f'where `theme`.`section_id` = {section.id}')
+            number_posts = Post.objects.raw(f'select 1 as id, sum(tb.cnt) as res from '
+                                     f'(select distinct `theme`.`id` as t_id, count(`post`.`id`) as cnt from `forum`.`post`, `forum`.`theme`'
+                                     f'where `theme`.`section_id` = {section.id} and `theme`.`id` = `post`.`theme_id`) as tb')
+            data['number_themes'] = number_themes[0].cnt
+            data['number_posts'] = number_posts[0].res
+            if number_posts[0].res == 0:
+                data['date_last_post'] = 'Нет сообщений'
+            else:
+                last_post = Post.objects.raw(f'select 1 as id, max(`post`.`datetime`) as res from `forum`.`post`, `forum`.`theme`' 
+                                            f'where `theme`.`section_id` = {section.id} and `theme`.`id` = `post`.`theme_id`')
+                data['date_last_post'] = last_post[0].res
+            context['sections'].append(data)
+
         return context
 
 
