@@ -1,12 +1,13 @@
 # pages/views.py
 from django.shortcuts import render
+from django.core.exceptions import PermissionDenied
 from django.views.generic import TemplateView, FormView
 from django.contrib.auth.views import LogoutView
 from django.http import JsonResponse
 from hashlib import sha256
 import time
-from .models import User, Session
-from .form import LoginForm
+from .models import User, Session, Section
+from .form import LoginForm, SectionForm
 
 
 SESSION_TIME_LENGTH = 60*60*24
@@ -83,3 +84,34 @@ class ExitView(LogoutView):
             except BaseException as error:
                 pass
         return JsonResponse({})
+
+
+class AddSectionPageView(FormView):
+    template_name = 'add_section.html'
+    form_class = SectionForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = user_by_session(self.request)
+        if user is None or not user.is_admin:
+            raise PermissionDenied()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        data = {'ok': False}
+        section_form = SectionForm(request.POST)
+        user = user_by_session(self.request)
+
+        if user is None or not user.is_admin:
+            raise PermissionDenied()
+
+        if section_form.is_valid():
+            try:
+                Section.objects.create(name=section_form.data['name'])
+                data['ok'] = True
+            except BaseException as error:
+                print(error)
+        else:
+            print('ooops')
+        return JsonResponse(data)
+

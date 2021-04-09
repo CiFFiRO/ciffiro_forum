@@ -10,49 +10,42 @@
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
   <script type="text/javascript">
-  $(document).ready(function () {
-    let null_field = true;
-    let form = {nickname: '', password: ''};
-    let errorId = 'errorId';
-    let showErrorNow = false;
-    form.csrfmiddlewaretoken = $('input[name="csrfmiddlewaretoken"]').val();
+    $(document).ready(function () {
+        let form = {name: ''};
+        let showErrorNow = false;
+        form.csrfmiddlewaretoken = $('input[name="csrfmiddlewaretoken"]').val();
 
-    function updateButtonState() {
-      $('#loginButtonId').prop('disabled', form.nickname.length === 0 || form.password.length === 0);
-    }
-    $('#nicknameInputId').on('input change', function () {
-      form.nickname = this.value;
-      updateButtonState();
-    });
-    $('#passwordInputId').on('input change', function () {
-      form.password = this.value;
-      updateButtonState();
-    });
-    updateButtonState();
-    $('#loginButtonId').on('click', function () {
-      $.post("/login/", form)
-      .done(response => {
-      if (response.ok) {
-        Cookies.set('session_hash', response.session_hash, { sameSite: 'strict' })
-        window.location.replace(window.location.origin);
-      } else {
-        if (!showErrorNow) {
+        function updateButtonState() {
+        $('#addButtonId').prop('disabled', form.name.length === 0);
+        }
+        $('#nameInputId').on('input change', function () {
+        form.name = this.value;
+        updateButtonState();
+        });
+        updateButtonState();
+
+        $('#addButtonId').on('click', function () {
+          $.post("/add_section/", form)
+          .done(response => {
+          if (response.ok) {
+            window.location.replace(window.location.origin);
+          } else {
+            if (!showErrorNow) {
+                $('#appendErrorId').append(`
+                <small id="emailHelp" class="form-text text-danger">Недопустимое название раздела.</small>
+                `);
+                showErrorNow = true;
+            }
+          }})
+          .fail(() => {
+          if (!showErrorNow) {
             $('#appendErrorId').append(`
-            <small id="emailHelp" class="form-text text-danger">Неверный логин или пароль.</small>
+             <small id="emailHelp" class="form-text text-danger">Нет ответа от сервера.</small>
             `);
             showErrorNow = true;
-        }
-      }})
-      .fail(() => {
-      if (!showErrorNow) {
-        $('#appendErrorId').append(`
-         <small id="emailHelp" class="form-text text-danger">Нет ответа от сервера.</small>
-        `);
-        showErrorNow = true;
-        }
-      })
-      });
-
+            }
+          })
+        });
     });
   </script>
   <style>
@@ -68,7 +61,7 @@
        .center-position {
         top: 50%;left: 50%;
         width:  30em;
-        height:  18em;
+        height:  12em;
         margin-top: -15em;
         margin-left: -16em;
         border: 3px solid #ccc;position:fixed;z-index: 80;
@@ -80,24 +73,19 @@
     <div class="container">
         <div class="row">
             <div class="col">
-            <h3 class="form-signin-heading" align="center">Введите Ваш логин и пароль чтобы авторизоваться.</h3>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col">
-                {% csrf_token %}
-            <div class="input-group top-buffer-15"><input id="nicknameInputId" type="text" class="form-control" placeholder="Логин"></div>
+            <h3 class="form-signin-heading" align="center">Введите название нового раздела.</h3>
             </div>
         </div>
         <div class="row">
             <div class="col" id="appendErrorId">
-                <div class="input-group top-buffer-15"><input id="passwordInputId" type="password" class="form-control" placeholder="Пароль"></div>
+                {% csrf_token %}
+            <div class="input-group top-buffer-15"><input id="nameInputId" type="text" class="form-control" placeholder="Название"></div>
             </div>
         </div>
         <div class="row">
             <div class="col text-center">
                 <div class="btn-group btn-group-lg top-buffer-15" role="group">
-                    <button type="button" class="btn btn-dark" id="loginButtonId">Войти</button>
+                    <button type="button" class="btn btn-dark" id="addButtonId">Добавить</button>
                 </div>
             </div>
         </div>

@@ -21,4 +21,5 @@ urlpatterns = [
     path('', include('pages.urls')),
     path('login/', include('pages.urls')),
     path('exit/', include('pages.urls')),
+    path('add_section/', include('pages.urls')),
 ]
