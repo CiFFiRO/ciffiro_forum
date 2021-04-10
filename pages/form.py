@@ -3,7 +3,7 @@ from django.core import validators
 
 
 AlphaDigitalTextValidator = validators.RegexValidator(r'^[a-zA-Z0-9]*$', 'Only alphanumeric characters are allowed.')
-SectionThemeNameValidator = validators.RegexValidator(r'^[а-яА-Яa-zA-Z0-9?! ]+$', 'Bad name.')
+SectionThemeNameValidator = validators.RegexValidator(r'^[а-яА-Яa-zA-Z0-9?! ]{1,75}$', 'Bad name.')
 
 
 class LoginForm(forms.Form):
@@ -11,6 +11,6 @@ class LoginForm(forms.Form):
     password = forms.CharField(validators=[AlphaDigitalTextValidator])
 
 
-class SectionForm(forms.Form):
+class SectionThemeForm(forms.Form):
     name = forms.CharField(validators=[SectionThemeNameValidator])
 

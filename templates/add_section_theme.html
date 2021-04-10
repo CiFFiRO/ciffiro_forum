@@ -25,14 +25,20 @@
         updateButtonState();
 
         $('#addButtonId').on('click', function () {
-          $.post("/add_section/", form)
+          {% if is_section %}
+          let path_request = "/add_section/";
+          {% endif %}
+          {% if is_theme %}
+          let path_request = "/section/{{ section_id }}/add_theme/";
+          {% endif %}
+          $.post(path_request, form)
           .done(response => {
           if (response.ok) {
             window.location.replace(window.location.origin);
           } else {
             if (!showErrorNow) {
                 $('#appendErrorId').append(`
-                <small id="emailHelp" class="form-text text-danger">Недопустимое название раздела.</small>
+                <small id="emailHelp" class="form-text text-danger">Недопустимое название.</small>
                 `);
                 showErrorNow = true;
             }
@@ -73,7 +79,13 @@
     <div class="container">
         <div class="row">
             <div class="col">
-            <h3 class="form-signin-heading" align="center">Введите название нового раздела.</h3>
+            <h3 class="form-signin-heading" align="center">Введите название
+                {% if is_section %}
+                нового раздела.
+                {% elif is_theme %}
+                новой темы.
+                {% endif %}
+            </h3>
             </div>
         </div>
         <div class="row">

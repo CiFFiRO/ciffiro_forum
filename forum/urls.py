@@ -22,5 +22,6 @@ urlpatterns = [
     path('login/', include('pages.urls')),
     path('exit/', include('pages.urls')),
     path('add_section/', include('pages.urls')),
-    re_path(r'section/\d+/', include('pages.urls')),
+    re_path(r'^section/\d+/$', include('pages.urls')),
+    re_path(r'^section/\d+/add_theme/$', include('pages.urls')),
 ]

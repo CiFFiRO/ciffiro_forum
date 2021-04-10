@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from hashlib import sha256
 import time
 from .models import User, Session, Section, Theme, Post
-from .form import LoginForm, SectionForm
+from .form import LoginForm, SectionThemeForm
 
 
 SESSION_TIME_LENGTH = 60*60*24
@@ -114,11 +114,13 @@ class ExitView(LogoutView):
 
 
 class AddSectionPageView(FormView):
-    template_name = 'add_section.html'
-    form_class = SectionForm
+    template_name = 'add_section_theme.html'
+    form_class = SectionThemeForm
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['is_section'] = True
+        context['is_theme'] = False
         user = user_by_session(self.request)
         if user is None or not user.is_admin:
             raise PermissionDenied()
@@ -126,7 +128,7 @@ class AddSectionPageView(FormView):
 
     def post(self, request, *args, **kwargs):
         data = {'ok': False}
-        section_form = SectionForm(request.POST)
+        section_form = SectionThemeForm(request.POST)
         user = user_by_session(self.request)
 
         if user is None or not user.is_admin:
@@ -159,15 +161,50 @@ class SectionPageView(TemplateView):
         context['page'] = page
         themes_by_page = 5
 
-        themes = Theme.objects.raw(f'select `theme`.`id`, `theme`.`name`, max(`post`.`datetime`) as time, count(`post`.`id`) as cnt '
-                                   f'from `forum`.`theme`, `forum`.`post`'
-                          f'where `theme`.`section_id` = {context["section_id"]} and `theme`.`id` = `post`.`theme_id`'
-                          f'order by time desc limit {(page-1)*themes_by_page}, {themes_by_page}')
+        themes = Theme.objects.raw(f'select id, name, time, cnt from '
+                                   f'(select tb1.`id`, tb1.`name`, max(tb2.`datetime`) as time, count(tb2.`id`) as cnt '
+                                   f'from `forum`.`theme` as tb1 left join `forum`.`post` as tb2 on tb1.id = tb2.theme_id '
+                                   f'where tb1.section_id = {context["section_id"]}) as tb '
+                                   f'order by time desc limit {(page-1)*themes_by_page}, {themes_by_page}')
         context['themes'] = []
         for theme in themes:
-            if theme.id is None:
-                continue
-            context['themes'].append({'id': theme.id, 'name': theme.name, 'number_posts': theme.cnt, 'date_last_post': theme.time})
+            data = {'id': theme.id, 'name': theme.name, 'number_posts': theme.cnt, 'date_last_post': theme.time}
+            data['date_last_post'] = data['date_last_post'] if data['date_last_post'] is not None else 'Нет сообщений'
+            context['themes'].append(data)
 
         return context
+
+
+class AddThemePageView(FormView):
+    template_name = 'add_section_theme.html'
+    form_class = SectionThemeForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_section'] = False
+        context['is_theme'] = True
+        context['section_id'] = int(self.request.path.split('/')[-3])
+        user = user_by_session(self.request)
+        if user is None:
+            raise PermissionDenied()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        data = {'ok': False}
+        section_form = SectionThemeForm(request.POST)
+        user = user_by_session(self.request)
+
+        if user is None or not user.is_admin:
+            raise PermissionDenied()
+        section_id = int(self.request.path.split('/')[-3])
+        if section_form.is_valid():
+            try:
+                section = Section.objects.get(id=section_id)
+                Theme.objects.create(name=section_form.data['name'], user=user, section=section)
+                data['ok'] = True
+            except BaseException as error:
+                print(error)
+        else:
+            print('ooops')
+        return JsonResponse(data)
 
