@@ -27,27 +27,33 @@ def user_by_session(request):
     return None
 
 
+def set_user_context(context, request):
+    is_user = False
+    context['is_admin'] = False
+    user = user_by_session(request)
+
+    if user is not None:
+        if user.is_admin == 1:
+            context['is_admin'] = True
+        context['user_name'] = user.nickname
+        is_user = True
+
+    context['is_user'] = is_user
+
+    if is_user:
+        context['head'] = 'user_panel.html'
+    else:
+        context['head'] = 'welcome.html'
+
+
 class HomePageView(TemplateView):
     template_name = 'home.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        is_user = False
-        context['is_admin'] = False
+        set_user_context(context, self.request)
+
         context['sections'] = []
-        user = user_by_session(self.request)
-
-        if user is not None:
-            if user.is_admin == 1:
-                context['is_admin'] = True
-            context['user_name'] = user.nickname
-            is_user = True
-
-        if is_user:
-            context['head'] = 'user_panel.html'
-        else:
-            context['head'] = 'welcome.html'
-
         sections = Section.objects.all()
         for section in sections:
             data = {'name': section.name}
@@ -64,6 +70,7 @@ class HomePageView(TemplateView):
                 last_post = Post.objects.raw(f'select 1 as id, max(`post`.`datetime`) as res from `forum`.`post`, `forum`.`theme`' 
                                             f'where `theme`.`section_id` = {section.id} and `theme`.`id` = `post`.`theme_id`')
                 data['date_last_post'] = last_post[0].res
+            data['id'] = section.id
             context['sections'].append(data)
 
         return context
@@ -134,4 +141,33 @@ class AddSectionPageView(FormView):
         else:
             print('ooops')
         return JsonResponse(data)
+
+
+class SectionPageView(TemplateView):
+    template_name = 'section.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        set_user_context(context, self.request)
+        context['section_id'] = int(self.request.path.split('/')[-2])
+        page = None
+        try:
+            page = int(self.request.GET['page'])
+            page = page if page > 0 else 1
+        except BaseException:
+            page = 1
+        context['page'] = page
+        themes_by_page = 5
+
+        themes = Theme.objects.raw(f'select `theme`.`id`, `theme`.`name`, max(`post`.`datetime`) as time, count(`post`.`id`) as cnt '
+                                   f'from `forum`.`theme`, `forum`.`post`'
+                          f'where `theme`.`section_id` = {context["section_id"]} and `theme`.`id` = `post`.`theme_id`'
+                          f'order by time desc limit {(page-1)*themes_by_page}, {themes_by_page}')
+        context['themes'] = []
+        for theme in themes:
+            if theme.id is None:
+                continue
+            context['themes'].append({'id': theme.id, 'name': theme.name, 'number_posts': theme.cnt, 'date_last_post': theme.time})
+
+        return context
 
