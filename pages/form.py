@@ -13,4 +13,3 @@ class LoginForm(forms.Form):
 
 class SectionThemeForm(forms.Form):
     name = forms.CharField(validators=[SectionThemeNameValidator])
-

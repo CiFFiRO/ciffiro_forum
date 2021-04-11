@@ -1,0 +1,182 @@
+<!-- templates/home.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script type="text/javascript">
+      $(document).ready(function () {
+      let csrfmiddlewaretoken = $('input[name="csrfmiddlewaretoken"]').val();
+      $('#buttonExitId').on('click', function () {
+      let data = {'csrfmiddlewaretoken': csrfmiddlewaretoken}
+      $.post("/exit/", data)
+          .done(response => {
+            window.location.replace(window.location.origin);
+          }).fail(() => {
+            window.location.replace(window.location.origin);
+          });
+      });
+      $('#addButtonId').on('click', function () {
+      let data = {'csrfmiddlewaretoken': csrfmiddlewaretoken, 'is_add_post': true, 'is_delete_post': false};
+      data.post_text = $('#textInputId').val();
+      $.post(window.location+'', data)
+          .done(response => {
+          if (response.ok) {
+            location.reload();
+          } else {
+
+          }
+          }).fail(() => {
+            window.location.replace(window.location.origin);
+          });
+      });
+
+      function updateButtonState() {
+        $('#addButtonId').prop('disabled', $('#textInputId').val().length === 0);
+      }
+      $('#textInputId').on('input change', function () {
+        updateButtonState();
+      });
+      updateButtonState();
+
+      let deleteButtons = $('button[name="buttonDeletePost"]');
+      for (let index=0; index < deleteButtons.length; ++index) {
+        console.log(deleteButtons[index])
+        deleteButtons[index].onclick= function () {
+            let data = {'csrfmiddlewaretoken': csrfmiddlewaretoken, 'is_add_post': false, 'is_delete_post': true};
+            data.post_id = deleteButtons[index].value;
+            $.post(window.location+'', data)
+                .done(response => {
+                  if (response.ok) {
+                    location.reload();
+                  } else {
+
+                  }
+                  }).fail(() => {
+                    window.location.replace(window.location.origin);
+            });
+
+        };
+      }
+
+      });
+  </script>
+  <style>
+      .section {
+        font-family: Verdana;
+        font-size: 9pt;
+       }
+       .left-buffer-20 { margin-left:20px; }
+       .left-buffer-10 { margin-left:10px; }
+       .top-buffer-20 { margin-top:20px; }
+       .top-buffer-10 { margin-top:10px; }
+       .bottom-buffer { margin-bottom:10px; }
+  </style>
+</head>
+<body>
+<div class="container">
+{% extends head %}
+{% block content %}
+    <div class="row top-buffer-20">
+        <div class="container border">
+            <div class="row">
+                <div class="col">
+            {% if is_admin %}
+              <button type="button" class="btn btn-light btn-sm top-buffer-10" id="buttonDeleteThemeId">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                </svg>
+                  Удалить тему
+              </button>
+            {% endif %}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <h1>{{ theme_name }}</h1>
+                </div>
+            </div>
+            {% for post in posts %}
+          <div class="row">
+              <div class="container border bottom-buffer">
+                  <div class="row">
+                      <div class="col text-left">
+                          <a href="/profile/{{ post.user_id }}"> {{ post.user_name }}</a>
+                      </div>
+                      <div class="col text-right">
+                          {{ post.datetime }}
+                          <button type="button" class="btn btn-light btn-sm top-buffer-10 left-buffer-10" name="buttonDeletePost" value="{{ post.id }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                </svg>
+              </button>
+                      </div>
+                  </div>
+                  <div class="row">
+                      <div class="col">
+                          <pre>{{ post.text }}</pre>
+                      </div>
+                  </div>
+                  <div class="row">
+                  {% if post.is_edit %}
+                      <div class="col">
+                          Последнее исправление {{ post.last_edit }}.
+                      </div>
+                  {% endif %}
+                  {% if is_user and post.user_id == user_now_id %}
+                      <button type="button" class="btn btn-light btn-sm bottom-buffer left-buffer-10" id="buttonEditPostId" value="{{ post.id }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-journal-text" viewBox="0 0 16 16">
+                <path d="M5 10.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm0-2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5z"/>
+                <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2z"/>
+                <path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1H1z"/>
+                </svg> Исправить
+              </button>
+                  {% endif %}
+                  </div>
+              </div>
+          </div>
+            {% endfor %}
+            <div class="row">
+                <div class="col text-center">
+                    {% if page > 1 %}
+                    <a href="/theme/{{ theme_id }}/?page={{ page|add:"-1" }}" class="btn btn-light btn-sm left-buffer-20 bottom-buffer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                        Предыдующая страница
+                    </a>
+                    {% endif %}
+                    <a href="/theme/{{ theme_id }}/?page={{ page|add:"1" }}" class="btn btn-light btn-sm left-buffer-20 bottom-buffer ">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                    </svg>
+                        Следующая страница
+                    </a>
+                </div>
+            </div>
+            {% if is_user %}
+            <div class="row">
+                <div class="col text-center">
+            {% csrf_token %}
+                    <div class="input-group top-buffer-15"><textarea id="textInputId" maxlength="500" class="form-control" placeholder="Текст сообщения"></textarea></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col text-center">
+                    <div class="btn-group btn-group top-buffer-10 bottom-buffer" role="group">
+                        <button type="button" class="btn btn-dark " id="addButtonId">Написать сообщение</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+</body>
+</html>
+{% endblock content %}

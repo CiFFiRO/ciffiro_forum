@@ -8,6 +8,7 @@ from hashlib import sha256
 import time
 from .models import User, Session, Section, Theme, Post
 from .form import LoginForm, SectionThemeForm
+from django.utils import timezone
 
 
 SESSION_TIME_LENGTH = 60*60*24
@@ -27,6 +28,16 @@ def user_by_session(request):
     return None
 
 
+def page_by_request(request):
+    page = None
+    try:
+        page = int(request.GET['page'])
+        page = page if page > 0 else 1
+    except BaseException:
+        page = 1
+    return page
+
+
 def set_user_context(context, request):
     is_user = False
     context['is_admin'] = False
@@ -36,6 +47,7 @@ def set_user_context(context, request):
         if user.is_admin == 1:
             context['is_admin'] = True
         context['user_name'] = user.nickname
+        context['user_now_id'] = user.id
         is_user = True
 
     context['is_user'] = is_user
@@ -151,13 +163,13 @@ class SectionPageView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         set_user_context(context, self.request)
-        context['section_id'] = int(self.request.path.split('/')[-2])
-        page = None
+        section_id_index = -2
+        section_id = int(self.request.path.split('/')[section_id_index])
+        page = page_by_request(self.request)
         try:
-            page = int(self.request.GET['page'])
-            page = page if page > 0 else 1
+            context['section_id'] = Section.objects.get(id=section_id).id
         except BaseException:
-            page = 1
+            raise PermissionDenied()
         context['page'] = page
         themes_by_page = 5
 
@@ -168,6 +180,8 @@ class SectionPageView(TemplateView):
                                    f'order by time desc limit {(page-1)*themes_by_page}, {themes_by_page}')
         context['themes'] = []
         for theme in themes:
+            if theme.id is None:
+                break
             data = {'id': theme.id, 'name': theme.name, 'number_posts': theme.cnt, 'date_last_post': theme.time}
             data['date_last_post'] = data['date_last_post'] if data['date_last_post'] is not None else 'Нет сообщений'
             context['themes'].append(data)
@@ -196,7 +210,9 @@ class AddThemePageView(FormView):
 
         if user is None or not user.is_admin:
             raise PermissionDenied()
-        section_id = int(self.request.path.split('/')[-3])
+
+        section_id_index = -3
+        section_id = int(self.request.path.split('/')[section_id_index])
         if section_form.is_valid():
             try:
                 section = Section.objects.get(id=section_id)
@@ -207,4 +223,73 @@ class AddThemePageView(FormView):
         else:
             print('ooops')
         return JsonResponse(data)
+
+
+class ThemePageView(TemplateView):
+    template_name = 'theme.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        set_user_context(context, self.request)
+        theme_id_index = -2
+        theme_id = int(self.request.path.split('/')[theme_id_index])
+        page = page_by_request(self.request)
+        try:
+            theme = Theme.objects.get(id=theme_id)
+            context['theme_id'] = theme.id
+            context['theme_name'] = theme.name
+        except BaseException:
+            raise PermissionDenied()
+        context['page'] = page
+        posts_by_page = 5
+
+        posts = Post.objects.raw(f'select `id`, `user_id`, `is_edit`, `last_edit`, `text`, `datetime` '
+                                  f'from `forum`.`post` where `post`.`theme_id` = {context["theme_id"]} '
+                                   f'order by `datetime` limit {(page-1)*posts_by_page}, {posts_by_page}')
+        context['posts'] = []
+        for post in posts:
+            data = {'id': post.id, 'user_id': post.user_id, 'is_edit': post.is_edit, 'last_edit': post.last_edit,
+                    'text': post.text, 'datetime': post.datetime}
+            user = User.objects.get(id=post.user_id)
+            data['user_name'] = user.nickname
+            context['posts'].append(data)
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        theme_id_index = -2
+        theme_id = int(self.request.path.split('/')[theme_id_index])
+        user = user_by_session(self.request)
+        data = {'ok': False}
+
+        if user is None:
+            raise PermissionDenied()
+
+        if request.POST['is_add_post'] == 'true':
+            limit_post_length = 500
+            text_post = request.POST['post_text']
+            if len(text_post) > limit_post_length and len(text_post) > 0:
+                return JsonResponse(data)
+
+            try:
+                theme = Theme.objects.get(id=theme_id)
+                Post.objects.create(text=text_post, is_edit=0, last_edit=None,
+                                    user=user, theme=theme, datetime=timezone.now())
+                data = {'ok': True}
+            except BaseException:
+                raise PermissionDenied()
+        elif request.POST['is_delete_post'] == 'true':
+            if not user.is_admin:
+                raise PermissionDenied()
+            try:
+                delete_post_id = request.POST['post_id']
+                post = Post.objects.get(id=delete_post_id)
+                post.delete()
+                data = {'ok': True}
+            except BaseException:
+                raise PermissionDenied()
+
+        return JsonResponse(data)
+
+
 

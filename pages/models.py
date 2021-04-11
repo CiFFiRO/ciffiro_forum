@@ -29,6 +29,7 @@ class Post(models.Model):
     last_edit = models.DateTimeField(blank=True, null=True)
     user = models.ForeignKey('User', models.DO_NOTHING)
     theme = models.ForeignKey('Theme', on_delete=models.CASCADE)
+    datetime = models.DateTimeField(blank=True)
 
     class Meta:
         managed = False
