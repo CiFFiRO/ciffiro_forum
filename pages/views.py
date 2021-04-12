@@ -288,6 +288,15 @@ class ThemePageView(TemplateView):
                 data = {'ok': True}
             except BaseException:
                 raise PermissionDenied()
+        elif request.POST['is_delete_theme'] == 'true':
+            if not user.is_admin:
+                raise PermissionDenied()
+            try:
+                theme = Theme.objects.get(id=theme_id)
+                theme.delete()
+                data = {'ok': True}
+            except BaseException:
+                raise PermissionDenied()
 
         return JsonResponse(data)
 
