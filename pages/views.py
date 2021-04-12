@@ -296,7 +296,7 @@ class ThemePageView(TemplateView):
                 theme = Theme.objects.get(id=theme_id)
                 Post.objects.create(text=text_post, is_edit=0, last_edit=None,
                                     user=user, theme=theme, datetime=timezone.now())
-                data = {'ok': True}
+                data['ok'] = True
             except BaseException:
                 raise PermissionDenied()
         elif request.POST['is_delete_post'] == 'true':
@@ -306,7 +306,20 @@ class ThemePageView(TemplateView):
                 delete_post_id = request.POST['post_id']
                 post = Post.objects.get(id=delete_post_id)
                 post.delete()
-                data = {'ok': True}
+                data['ok'] = True
+            except BaseException:
+                raise PermissionDenied()
+        elif request.POST['is_edit_post'] == 'true':
+            try:
+                edit_post_id = request.POST['post_id']
+                post = Post.objects.get(id=edit_post_id)
+                if user.id != post.user.id:
+                    raise PermissionDenied()
+                post.text = request.POST['post_text']
+                post.is_edit = 1
+                post.last_edit = timezone.now()
+                post.save(update_fields=['text', 'is_edit', 'last_edit'])
+                data['ok'] = True
             except BaseException:
                 raise PermissionDenied()
         elif request.POST['is_delete_theme'] == 'true':
@@ -315,7 +328,7 @@ class ThemePageView(TemplateView):
             try:
                 theme = Theme.objects.get(id=theme_id)
                 theme.delete()
-                data = {'ok': True}
+                data['ok'] = True
             except BaseException:
                 raise PermissionDenied()
 

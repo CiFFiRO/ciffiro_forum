@@ -1,7 +1,7 @@
 function theme_page_setup() {
     let csrfmiddlewaretoken = $('input[name="csrfmiddlewaretoken"]').val();
     let data_head = {'csrfmiddlewaretoken': csrfmiddlewaretoken,
-        'is_add_post': false, 'is_delete_post': false, 'is_delete_theme': false};
+        'is_add_post': false, 'is_delete_post': false, 'is_delete_theme': false, 'is_edit': false};
     $('#buttonExitId').on('click', function () {
         let data = data;
         $.post("/exit/", data)
@@ -40,7 +40,6 @@ function theme_page_setup() {
 
     let deleteButtons = $('button[name="buttonDeletePost"]');
     for (let index=0; index < deleteButtons.length; ++index) {
-        console.log(deleteButtons[index])
         deleteButtons[index].onclick = function () {
             let data = data_head;
             data.is_delete_post = true;
@@ -73,4 +72,36 @@ function theme_page_setup() {
                 window.location.replace(window.location.origin);
               });
     })
+
+    let editButtons = $('button[name="buttonEditPost"]');
+    for (let index=0; index < editButtons.length; ++index) {
+        editButtons[index].onclick = function () {
+            let post_id = editButtons[index].value;
+            let post_text_node = $('#removeTextId_'+post_id);
+            let post_text = post_text_node.text();
+            console.log(post_text);
+            post_text_node.remove();
+            $('#appendTextarea_'+post_id).append(
+            `<textarea id="editedTextId_${post_id}">${post_text}</textarea>`
+            );
+
+            editButtons[index].onclick = function () {
+                let data = data_head;
+                data.is_edit_post = true;
+                data.post_text = $(`#editedTextId_${post_id}`).val();
+                data.post_id = post_id;
+                console.log(data.post_text);
+                $.post(window.location+'', data)
+                      .done(response => {
+                      if (response.ok) {
+                        location.reload();
+                      } else {
+                        window.location.replace(window.location.origin);
+                      }
+                      }).fail(() => {
+                        window.location.replace(window.location.origin);
+                      });
+            }
+        }
+    }
 }
