@@ -77,6 +77,7 @@ class Theme(models.Model):
     name = models.CharField(max_length=75)
     user = models.ForeignKey('User', models.DO_NOTHING)
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
+    datetime = models.DateTimeField(blank=True)
 
     class Meta:
         managed = False

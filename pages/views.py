@@ -172,18 +172,34 @@ class SectionPageView(TemplateView):
             raise PermissionDenied()
         context['page'] = page
         themes_by_page = 5
+        width_paginator = 1
+
+        number_posts = Theme.objects.raw(
+            f'select 1 as id, count(*) as cnt from `forum`.`theme` where `theme`.`section_id` = {section_id}')
+        number_pages = 0
+        if len(number_posts) == 1:
+            number_pages = (number_posts[0].cnt // themes_by_page) + (
+                1 if number_posts[0].cnt % themes_by_page > 0 else 0)
+        context['number_pages'] = number_pages
+        context['width_paginator'] = width_paginator
+        context['window_pages'] = list(range(max(page - width_paginator, 2),
+                                             min(page + width_paginator, number_pages - 1) + 1))
+        context['page_path'] = f'/section/{section_id}/'
 
         themes = Theme.objects.raw(f'select id, name, time, cnt from '
-                                   f'(select tb1.`id`, tb1.`name`, max(tb2.`datetime`) as time, count(tb2.`id`) as cnt '
-                                   f'from `forum`.`theme` as tb1 left join `forum`.`post` as tb2 on tb1.id = tb2.theme_id '
-                                   f'where tb1.section_id = {context["section_id"]}) as tb '
-                                   f'order by time desc limit {(page-1)*themes_by_page}, {themes_by_page}')
+                                   f'(select id, name, max(time) as time, count(post_id) as cnt  from  '
+                                   f'(select tb1.`id`, tb1.`name`,  '
+                                   f'case when tb2.`datetime` is null then tb1.`datetime` else tb2.`datetime` end as time,  '
+                                   f'tb2.`id` as post_id '
+                                   f'from `forum`.`theme` as tb1 left join `forum`.`post` as tb2 on tb1.id = tb2.theme_id  '
+                                   f'where tb1.section_id = {section_id}) as tb group by id, name) as tb1 '
+                                   f'order by time desc limit {(page-1)*themes_by_page}, {themes_by_page} ')
         context['themes'] = []
         for theme in themes:
             if theme.id is None:
                 break
             data = {'id': theme.id, 'name': theme.name, 'number_posts': theme.cnt, 'date_last_post': theme.time}
-            data['date_last_post'] = data['date_last_post'] if data['date_last_post'] is not None else 'Нет сообщений'
+            data['date_last_post'] = data['date_last_post'] if theme.cnt > 0 else 'Нет сообщений'
             context['themes'].append(data)
 
         return context
@@ -237,7 +253,8 @@ class AddThemePageView(FormView):
         if section_form.is_valid():
             try:
                 section = Section.objects.get(id=section_id)
-                Theme.objects.create(name=section_form.data['name'], user=user, section=section)
+                Theme.objects.create(name=section_form.data['name'], datetime=timezone.now(),
+                                     user=user, section=section)
                 data['ok'] = True
             except BaseException as error:
                 print(error)
@@ -261,12 +278,24 @@ class ThemePageView(TemplateView):
             context['theme_name'] = theme.name
         except BaseException:
             raise PermissionDenied()
+
         context['page'] = page
         posts_by_page = 5
-
+        width_paginator = 1
         posts = Post.objects.raw(f'select `id`, `user_id`, `is_edit`, `last_edit`, `text`, `datetime` '
-                                  f'from `forum`.`post` where `post`.`theme_id` = {context["theme_id"]} '
+                                  f'from `forum`.`post` where `post`.`theme_id` = {theme_id} '
                                    f'order by `datetime` limit {(page-1)*posts_by_page}, {posts_by_page}')
+
+        number_posts = Post.objects.raw(f'select 1 as id, count(*) as cnt from `forum`.`post` where `post`.`theme_id` = {theme_id}')
+        number_pages = 0
+        if len(number_posts) == 1:
+            number_pages = (number_posts[0].cnt // posts_by_page) + (1 if number_posts[0].cnt % posts_by_page > 0 else 0)
+        context['number_pages'] = number_pages
+        context['width_paginator'] = width_paginator
+        context['window_pages'] = list(range(max(page-width_paginator, 2),
+                                             min(page+width_paginator, number_pages-1)+1))
+        context['page_path'] = f'/theme/{theme_id}/'
+
         context['posts'] = []
         for post in posts:
             data = {'id': post.id, 'user_id': post.user_id, 'is_edit': post.is_edit, 'last_edit': post.last_edit,
