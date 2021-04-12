@@ -188,6 +188,27 @@ class SectionPageView(TemplateView):
 
         return context
 
+    def post(self, request, *args, **kwargs):
+        section_id_index = -2
+        section_id = int(self.request.path.split('/')[section_id_index])
+        user = user_by_session(self.request)
+        data = {'ok': False}
+
+        if user is None:
+            raise PermissionDenied()
+
+        if request.POST['is_delete_section'] == 'true':
+            if not user.is_admin:
+                raise PermissionDenied()
+            try:
+                section = Section.objects.get(id=section_id)
+                section.delete()
+                data = {'ok': True}
+            except BaseException:
+                raise PermissionDenied()
+
+        return JsonResponse(data)
+
 
 class AddThemePageView(FormView):
     template_name = 'add_section_theme.html'
