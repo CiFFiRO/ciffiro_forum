@@ -2,15 +2,8 @@ function theme_page_setup() {
     let csrfmiddlewaretoken = $('input[name="csrfmiddlewaretoken"]').val();
     let data_head = {'csrfmiddlewaretoken': csrfmiddlewaretoken,
         'is_add_post': false, 'is_delete_post': false, 'is_delete_theme': false, 'is_edit': false};
-    $('#buttonExitId').on('click', function () {
-        let data = data;
-        $.post("/exit/", data)
-          .done(response => {
-            window.location.replace(window.location.origin);
-          }).fail(() => {
-            window.location.replace(window.location.origin);
-          });
-    });
+    setup_exit({'csrfmiddlewaretoken': csrfmiddlewaretoken});
+
     $('#addButtonId').on('click', function () {
         let data = data_head;
         data.is_add_post = true;

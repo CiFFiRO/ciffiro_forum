@@ -133,6 +133,7 @@ class AddSectionPageView(FormView):
         context = super().get_context_data(**kwargs)
         context['is_section'] = True
         context['is_theme'] = False
+        context['path_request'] = "/add_section/"
         user = user_by_session(self.request)
         if user is None or not user.is_admin:
             raise PermissionDenied()
@@ -167,7 +168,9 @@ class SectionPageView(TemplateView):
         section_id = int(self.request.path.split('/')[section_id_index])
         page = page_by_request(self.request)
         try:
-            context['section_id'] = Section.objects.get(id=section_id).id
+            section = Section.objects.get(id=section_id)
+            context['section_id'] = section.id
+            context['section_name'] = section.name
         except BaseException:
             raise PermissionDenied()
         context['page'] = page
@@ -234,7 +237,10 @@ class AddThemePageView(FormView):
         context = super().get_context_data(**kwargs)
         context['is_section'] = False
         context['is_theme'] = True
-        context['section_id'] = int(self.request.path.split('/')[-3])
+        section_id_index = -3
+        section_id = int(self.request.path.split('/')[section_id_index])
+        context['section_id'] = section_id
+        context['path_request'] = f"/section/{section_id}/add_theme/"
         user = user_by_session(self.request)
         if user is None:
             raise PermissionDenied()
@@ -276,6 +282,7 @@ class ThemePageView(TemplateView):
             theme = Theme.objects.get(id=theme_id)
             context['theme_id'] = theme.id
             context['theme_name'] = theme.name
+            context['section_id'] = theme.section.id
         except BaseException:
             raise PermissionDenied()
 

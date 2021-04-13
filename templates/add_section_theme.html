@@ -4,54 +4,16 @@
 <head>
     {% load static %}
   <meta charset="UTF-8">
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+    <script type="text/javascript" src="/static/add_section_theme.js"></script>
   <script type="text/javascript">
     $(document).ready(function () {
-        let form = {name: ''};
-        let showErrorNow = false;
-        form.csrfmiddlewaretoken = $('input[name="csrfmiddlewaretoken"]').val();
-
-        function updateButtonState() {
-        $('#addButtonId').prop('disabled', form.name.length === 0);
-        }
-        $('#nameInputId').on('input change', function () {
-        form.name = this.value;
-        updateButtonState();
-        });
-        updateButtonState();
-
-        $('#addButtonId').on('click', function () {
-          {% if is_section %}
-          let path_request = "/add_section/";
-          {% endif %}
-          {% if is_theme %}
-          let path_request = "/section/{{ section_id }}/add_theme/";
-          {% endif %}
-          $.post(path_request, form)
-          .done(response => {
-          if (response.ok) {
-            window.location.replace(window.location.origin);
-          } else {
-            if (!showErrorNow) {
-                $('#appendErrorId').append(`
-                <small id="emailHelp" class="form-text text-danger">Недопустимое название.</small>
-                `);
-                showErrorNow = true;
-            }
-          }})
-          .fail(() => {
-          if (!showErrorNow) {
-            $('#appendErrorId').append(`
-             <small id="emailHelp" class="form-text text-danger">Нет ответа от сервера.</small>
-            `);
-            showErrorNow = true;
-            }
-          })
-        });
+        setup_add_section_theme("{{ path_request }}");
     });
   </script>
   <style>
