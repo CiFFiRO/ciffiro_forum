@@ -2,6 +2,7 @@
 from django.urls import path, re_path
 from .views import HomePageView, LoginPageView, ExitView, AddSectionPageView, \
     SectionPageView, AddThemePageView, ThemePageView
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('', HomePageView.as_view(), name='home'),
@@ -11,4 +12,5 @@ urlpatterns = [
     re_path(r'^section/\d+/$', SectionPageView.as_view(), name='section'),
     re_path(r'^section/\d+/add_theme/$', AddThemePageView.as_view(), name='add_theme'),
     re_path(r'^theme/\d+/$', ThemePageView.as_view(), name='theme'),
+    re_path(r'^favicon\.ico$', RedirectView.as_view(url='/static/favicon.ico'), name='favicon'),
 ]
