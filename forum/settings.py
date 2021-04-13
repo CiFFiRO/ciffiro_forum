@@ -133,3 +133,18 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# Host for sending e-mail.
+EMAIL_HOST = 'smtp.mail.ru'
+
+# Port for sending e-mail.
+EMAIL_PORT = 465
+
+# Optional SMTP authentication information for EMAIL_HOST.
+DEFAULT_FROM_EMAIL = 'templatetestportal@mail.ru'
+EMAIL_HOST_USER = 'templatetestportal@mail.ru'
+EMAIL_HOST_PASSWORD = 'sK372NGf8DgRUtuy5Qt5'
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True

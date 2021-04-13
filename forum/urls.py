@@ -26,4 +26,5 @@ urlpatterns = [
     re_path(r'^section/\d+/add_theme/$', include('pages.urls')),
     re_path(r'^theme/\d+/$', include('pages.urls')),
     re_path(r'^favicon\.ico$', include('pages.urls')),
+    path('registration/', include('pages.urls')),
 ]

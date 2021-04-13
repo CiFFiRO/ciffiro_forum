@@ -6,12 +6,15 @@ from django.contrib.auth.views import LogoutView
 from django.http import JsonResponse
 from hashlib import sha256
 import time
-from .models import User, Session, Section, Theme, Post
-from .form import LoginForm, SectionThemeForm
+from .models import User, Session, Section, Theme, Post, RegistrationForm
+from .form import LoginForm, SectionThemeForm, UserRegistrationForm
 from django.utils import timezone
+from django.core.mail import EmailMessage
+from django.conf import settings
 
 
 SESSION_TIME_LENGTH = 60*60*24
+REGISTRATION_CODE_TIME_LIFE = 60*60*24
 
 
 def user_by_session(request):
@@ -371,4 +374,64 @@ class ThemePageView(TemplateView):
         return JsonResponse(data)
 
 
+class RegistrationPageView(FormView):
+    template_name = 'registration.html'
+    form_class = UserRegistrationForm
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.GET.get('is_confirm', '0') == '1':
+            context['is_confirm'] = True
+            context['message'] = 'Не удалось завершить регистрацию.'
+            try:
+                confirm_hash = self.request.GET['confirm_code']
+                registration_form = RegistrationForm.objects.get(confirm_hash=confirm_hash)
+                now = int(time.time())
+                datetime_now = timezone.now()
+                if len(User.objects.filter(nickname=registration_form.nickname)) == 0 and \
+                len(User.objects.filter(email=registration_form.email)) == 0 and \
+                    registration_form.time + REGISTRATION_CODE_TIME_LIFE >= now and registration_form.is_complete == 0:
+                    User.objects.create(email=registration_form.email, nickname=registration_form.nickname,
+                                        password_hash=registration_form.password_hash, is_admin=0,
+                                        registration_date=datetime_now, last_activity=datetime_now)
+                    registration_form.is_complete = 1
+                    registration_form.save(update_fields=['is_complete'])
+                    context['message'] = 'Регистрация завершена.'
+            except BaseException:
+                raise PermissionDenied()
+        else:
+            context['is_confirm'] = False
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        data = {'ok': False, 'message': ''}
+        registration_form = UserRegistrationForm(request.POST)
+
+        if registration_form.is_valid() and len(User.objects.filter(nickname=registration_form.data['nickname'])) == 0 and \
+                len(User.objects.filter(email=registration_form.data['email'])) == 0:
+            password_hash = sha256(registration_form.data['password'].encode('utf-8')).hexdigest()
+            now = int(time.time())
+            confirm_hash = sha256((str(now) + registration_form.data['nickname'] + registration_form.data['password']
+                                   + request.META['HTTP_USER_AGENT']).encode('utf-8')).hexdigest()
+            RegistrationForm.objects.create(email=registration_form.data['email'],
+                                            nickname=registration_form.data['nickname'],
+                                            password_hash=password_hash, time=now, confirm_hash=confirm_hash,
+                                            is_complete=0)
+            data['ok'] = True
+            link = f'http://{request.get_host()}/registration/?is_confirm=1&confirm_code={confirm_hash}'
+            email = EmailMessage('Регистрация на форуме.',
+                                 f'Для завершения регистрации пройдите по ссылке ниже:\n'
+                                 f'{link}\n\n', to=[registration_form.data['email']])
+            email.send()
+        else:
+            message = ''
+            if len(User.objects.filter(nickname=registration_form.data['nickname'])) == 1:
+                message = 'Данный псевдоним уже занят.'
+            elif len(User.objects.filter(email=registration_form.data['email'])) == 1:
+                message = 'Данный email уже используется.'
+            elif not registration_form.is_valid():
+                message = 'Форма заполнена не верно.'
+            data['message'] = message
+
+        return JsonResponse(data)
