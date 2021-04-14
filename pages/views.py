@@ -1,16 +1,18 @@
 # pages/views.py
+import time
+from hashlib import sha256
+
 from django.shortcuts import render
 from django.core.exceptions import PermissionDenied
 from django.views.generic import TemplateView, FormView
 from django.contrib.auth.views import LogoutView
 from django.http import JsonResponse
-from hashlib import sha256
-import time
-from .models import User, Session, Section, Theme, Post, RegistrationForm
-from .form import LoginForm, SectionThemeForm, UserRegistrationForm
 from django.utils import timezone
 from django.core.mail import EmailMessage
 from django.conf import settings
+
+from pages.models import User, Session, Section, Theme, Post, RegistrationForm, Mailbox
+from pages.form import LoginForm, SectionThemeForm, UserRegistrationForm
 
 
 SESSION_TIME_LENGTH = 60*60*24
@@ -380,17 +382,21 @@ class RegistrationPageView(FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
         if self.request.GET.get('is_confirm', '0') == '1':
             context['is_confirm'] = True
             context['message'] = 'Не удалось завершить регистрацию.'
+
             try:
                 confirm_hash = self.request.GET['confirm_code']
                 registration_form = RegistrationForm.objects.get(confirm_hash=confirm_hash)
                 now = int(time.time())
                 datetime_now = timezone.now()
+
                 if len(User.objects.filter(nickname=registration_form.nickname)) == 0 and \
-                len(User.objects.filter(email=registration_form.email)) == 0 and \
-                    registration_form.time + REGISTRATION_CODE_TIME_LIFE >= now and registration_form.is_complete == 0:
+                    len(User.objects.filter(email=registration_form.email)) == 0 and \
+                        registration_form.time + REGISTRATION_CODE_TIME_LIFE >= now and \
+                        registration_form.is_complete == 0:
                     User.objects.create(email=registration_form.email, nickname=registration_form.nickname,
                                         password_hash=registration_form.password_hash, is_admin=0,
                                         registration_date=datetime_now, last_activity=datetime_now)
@@ -408,7 +414,8 @@ class RegistrationPageView(FormView):
         data = {'ok': False, 'message': ''}
         registration_form = UserRegistrationForm(request.POST)
 
-        if registration_form.is_valid() and len(User.objects.filter(nickname=registration_form.data['nickname'])) == 0 and \
+        if registration_form.is_valid() and \
+                len(User.objects.filter(nickname=registration_form.data['nickname'])) == 0 and \
                 len(User.objects.filter(email=registration_form.data['email'])) == 0:
             password_hash = sha256(registration_form.data['password'].encode('utf-8')).hexdigest()
             now = int(time.time())
@@ -433,5 +440,65 @@ class RegistrationPageView(FormView):
             elif not registration_form.is_valid():
                 message = 'Форма заполнена не верно.'
             data['message'] = message
+
+        return JsonResponse(data)
+
+
+class ProfilePageView(TemplateView):
+    template_name = 'profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        set_user_context(context, self.request)
+        user_id_index = -2
+        user_id = int(self.request.path.split('/')[user_id_index])
+
+        try:
+            user = User.objects.get(id=user_id)
+            context['user_id'] = user_id
+            context['user_profile_name'] = user.nickname
+            context['user_registration_date'] = user.registration_date
+            context['user_last_activity'] = user.last_activity
+            context['user_is_admin'] = True if user.is_admin else False
+            context['number_posts'] = Post.objects.raw(f'select 1 as id, count(*) as cnt from `forum`.`post` '
+                                                       f'where `post`.`user_id` = {user_id}')[0].cnt
+            context['number_themes'] = Theme.objects.raw(f'select 1 as id, count(*) as cnt from `forum`.`theme` '
+                                                         f'where `theme`.`user_id` = {user_id}')[0].cnt
+        except BaseException as e:
+            print(e)
+            raise PermissionDenied()
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        data = {'ok': False}
+        user_now = user_by_session(request)
+        user_id_index = -2
+        user_id = int(self.request.path.split('/')[user_id_index])
+
+        if user_now is None:
+            raise PermissionDenied()
+
+        if request.POST.get('is_send_message', 'false') == 'true' and request.POST.get('message_text', '') and \
+                request.POST.get('message_subject', ''):
+            try:
+                to_user = User.objects.get(id=user_id)
+                message_text = request.POST['message_text']
+                message_subject = request.POST['message_subject']
+                Mailbox.objects.create(to_user=to_user, from_user=user_now, text=message_text,
+                                       datetime=timezone.now(), is_read=0, subject=message_subject)
+                data['ok'] = True
+            except BaseException:
+                raise PermissionDenied()
+        elif request.POST.get('is_read_message', 'false') == 'true' and request.POST.get('message_id', ''):
+            try:
+                message_id = int(request.POST['message_id'])
+                message = Mailbox.objects.get(id=message_id)
+                if message.from_user.id == user_now.id:
+                    message.is_read = 1
+                    message.save(update_fields=['is_read'])
+                    data['ok'] = True
+            except BaseException:
+                raise PermissionDenied()
 
         return JsonResponse(data)

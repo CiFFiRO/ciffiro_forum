@@ -12,9 +12,10 @@ class Mailbox(models.Model):
     id = models.IntegerField(primary_key=True)
     to_user = models.ForeignKey('User', on_delete=models.DO_NOTHING, related_name='touser')
     from_user = models.ForeignKey('User', on_delete=models.DO_NOTHING)
-    text = models.TextField()
+    text = models.TextField(max_length=500)
     datetime = models.DateTimeField()
     is_read = models.IntegerField()
+    subject = models.CharField(max_length=75)
 
     class Meta:
         managed = False
