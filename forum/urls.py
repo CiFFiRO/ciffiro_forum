@@ -28,4 +28,5 @@ urlpatterns = [
     re_path(r'^favicon\.ico$', include('pages.urls')),
     path('registration/', include('pages.urls')),
     re_path(r'^profile/\d+/$', include('pages.urls')),
+    re_path(r'^mailbox/((income)|(outgoing))/$', include('pages.urls')),
 ]

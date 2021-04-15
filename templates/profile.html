@@ -84,6 +84,16 @@
       </div>
     </div>
   </div>
+  {% elif is_user and user_now_id == user_id %}
+        <a href="/mailbox/income/" class="btn btn-light btn-sm left-buffer-20 bottom-buffer ">
+            Входящие
+        {% if income_number > 0 %}
+        ({{ income_number }})
+        {% endif %}
+        </a>
+        <a href="/mailbox/outgoing/" class="btn btn-light btn-sm left-buffer-20 bottom-buffer ">
+            Исходящие
+        </a>
   {% endif %}
 </div>
 </body>

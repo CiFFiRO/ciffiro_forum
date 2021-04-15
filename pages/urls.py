@@ -1,7 +1,7 @@
 # pages/urls.py
 from django.urls import path, re_path
 from .views import HomePageView, LoginPageView, ExitView, AddSectionPageView, \
-    SectionPageView, AddThemePageView, ThemePageView, RegistrationPageView, ProfilePageView
+    SectionPageView, AddThemePageView, ThemePageView, RegistrationPageView, ProfilePageView, MailboxPageView
 from django.views.generic import RedirectView
 
 urlpatterns = [
@@ -15,4 +15,5 @@ urlpatterns = [
     re_path(r'^favicon\.ico$', RedirectView.as_view(url='/static/favicon.ico'), name='favicon'),
     path('registration/', RegistrationPageView.as_view(), name='registration'),
     re_path(r'^profile/\d+/$', ProfilePageView.as_view(), name='profile'),
+    re_path(r'^mailbox/((income)|(outgoing))/$', MailboxPageView.as_view(), name='mailbox'),
 ]

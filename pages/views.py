@@ -34,12 +34,8 @@ def user_by_session(request):
 
 
 def page_by_request(request):
-    page = None
-    try:
-        page = int(request.GET['page'])
-        page = page if page > 0 else 1
-    except BaseException:
-        page = 1
+    page = int(request.GET.get('page', '1'))
+    page = page if page > 0 else 1
     return page
 
 
@@ -464,6 +460,12 @@ class ProfilePageView(TemplateView):
                                                        f'where `post`.`user_id` = {user_id}')[0].cnt
             context['number_themes'] = Theme.objects.raw(f'select 1 as id, count(*) as cnt from `forum`.`theme` '
                                                          f'where `theme`.`user_id` = {user_id}')[0].cnt
+
+            user_now = user_by_session(self.request)
+            if user_now is not None:
+                context['income_number'] = Mailbox.objects.raw(f'select 1 as id, count(*) as cnt from `forum`.`mailbox` '
+                                                               f'where `mailbox`.`to_user_id` = {user_now.id} '
+                                                               f'and `mailbox`.`is_read` = 0')[0].cnt
         except BaseException as e:
             print(e)
             raise PermissionDenied()
@@ -502,3 +504,54 @@ class ProfilePageView(TemplateView):
                 raise PermissionDenied()
 
         return JsonResponse(data)
+
+
+class MailboxPageView(TemplateView):
+    template_name = 'mailbox.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        set_user_context(context, self.request)
+        user = user_by_session(self.request)
+        page = page_by_request(self.request)
+
+        if user is None:
+            raise PermissionDenied()
+
+        messages_type = self.request.path.split('/')[-2]
+        if messages_type == 'income':
+            user_type = 'to_user_id'
+            context['message_type'] = 'income'
+        else:
+            user_type = 'from_user_id'
+            context['message_type'] = 'outgoing'
+
+        context['page'] = page
+        messages_by_page = 5
+        width_paginator = 1
+        number_messages = Mailbox.objects.raw(f'select 1 as id, count(*) as cnt from `forum`.`mailbox` '
+                                           f'where `mailbox`.`{user_type}` = {user.id}')
+        number_pages = (number_messages[0].cnt // messages_by_page) + \
+                       (1 if number_messages[0].cnt % messages_by_page > 0 else 0)
+        context['number_pages'] = number_pages
+        context['width_paginator'] = width_paginator
+        context['window_pages'] = list(range(max(page-width_paginator, 2),
+                                             min(page+width_paginator, number_pages-1)+1))
+        messages = Mailbox.objects.raw(f'select `id`, `to_user_id`, `from_user_id`, '
+                                       f'`text`, `datetime`, `is_read`, `subject` '
+                                       f'from `forum`.`mailbox` where `mailbox`.`{user_type}` = {user.id} '
+                                       f'order by `datetime` limit {(page-1)*messages_by_page}, {messages_by_page}')
+        context['messages'] = []
+        for message in messages:
+            data = {'id': message.id, 'datetime': message.datetime, 'is_read': message.is_read,
+                    'subject': message.subject}
+            if messages_type == 'income':
+                data['user_id'] = message.from_user.id
+                data['user_name'] = message.from_user.nickname
+            else:
+                data['user_id'] = message.to_user.id
+                data['user_name'] = message.to_user.nickname
+            context['messages'].append(data)
+
+        return context
+
