@@ -1,10 +1,11 @@
-function setup_profile() {
+function message_page_setup(to_user_id) {
     let data = {};
     data.csrfmiddlewaretoken = $('input[name="csrfmiddlewaretoken"]').val();
     setup_exit(data);
 
     let messageTextarea = $('#messageTextId');
     let messageInput = $('#messageSubjectId');
+    data.message_subject = messageInput.val();
 
     function updateButtonState() {
       $('#sendButtonId').prop('disabled', !messageTextarea.val() || !messageInput.val());
@@ -20,9 +21,8 @@ function setup_profile() {
         updateButtonState();
     });
     $('#sendButtonId').on('click', function () {
-        let path = window.location.href.split('/');
         data.is_send_message = true;
-        $.post(`/profile/${path[path.length - 2]}/`, data)
+        $.post(`/profile/${to_user_id}/`, data)
           .done(response => {
             window.location.replace(window.location.origin);
           }).fail(() => {

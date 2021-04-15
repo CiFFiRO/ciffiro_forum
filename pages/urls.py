@@ -1,7 +1,8 @@
 # pages/urls.py
 from django.urls import path, re_path
 from .views import HomePageView, LoginPageView, ExitView, AddSectionPageView, \
-    SectionPageView, AddThemePageView, ThemePageView, RegistrationPageView, ProfilePageView, MailboxPageView
+    SectionPageView, AddThemePageView, ThemePageView, RegistrationPageView, ProfilePageView, MailboxPageView, \
+    MessagePageView
 from django.views.generic import RedirectView
 
 urlpatterns = [
@@ -16,4 +17,5 @@ urlpatterns = [
     path('registration/', RegistrationPageView.as_view(), name='registration'),
     re_path(r'^profile/\d+/$', ProfilePageView.as_view(), name='profile'),
     re_path(r'^mailbox/((income)|(outgoing))/$', MailboxPageView.as_view(), name='mailbox'),
+    re_path(r'^message/\d+/$', MessagePageView.as_view(), name='message'),
 ]

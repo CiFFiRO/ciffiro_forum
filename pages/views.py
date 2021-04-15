@@ -530,7 +530,7 @@ class MailboxPageView(TemplateView):
         messages_by_page = 5
         width_paginator = 1
         number_messages = Mailbox.objects.raw(f'select 1 as id, count(*) as cnt from `forum`.`mailbox` '
-                                           f'where `mailbox`.`{user_type}` = {user.id}')
+                                              f'where `mailbox`.`{user_type}` = {user.id}')
         number_pages = (number_messages[0].cnt // messages_by_page) + \
                        (1 if number_messages[0].cnt % messages_by_page > 0 else 0)
         context['number_pages'] = number_pages
@@ -540,7 +540,7 @@ class MailboxPageView(TemplateView):
         messages = Mailbox.objects.raw(f'select `id`, `to_user_id`, `from_user_id`, '
                                        f'`text`, `datetime`, `is_read`, `subject` '
                                        f'from `forum`.`mailbox` where `mailbox`.`{user_type}` = {user.id} '
-                                       f'order by `datetime` limit {(page-1)*messages_by_page}, {messages_by_page}')
+                                       f'order by `datetime` desc limit {(page-1)*messages_by_page}, {messages_by_page}')
         context['messages'] = []
         for message in messages:
             data = {'id': message.id, 'datetime': message.datetime, 'is_read': message.is_read,
@@ -554,4 +554,40 @@ class MailboxPageView(TemplateView):
             context['messages'].append(data)
 
         return context
+
+
+class MessagePageView(TemplateView):
+    template_name = 'message.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        set_user_context(context, self.request)
+        user = user_by_session(self.request)
+        message_id_index = -2
+        message_id = int(self.request.path.split('/')[message_id_index])
+
+        if user is None or len(Mailbox.objects.filter(id=message_id)) == 0:
+            raise PermissionDenied()
+
+        message = Mailbox.objects.get(id=message_id)
+
+        if message.to_user.id != user.id and message.from_user.id != user.id:
+            raise PermissionDenied()
+
+        context['subject'] = message.subject
+        context['text'] = message.text
+        if message.to_user.id == user.id:
+            context['nickname'] = message.from_user.nickname
+            context['message_type'] = 'incoming'
+            context['message_user_id'] = message.from_user.id
+            message.is_read = 1
+            message.save(update_fields=['is_read'])
+        else:
+            context['nickname'] = message.to_user.nickname
+            context['message_type'] = 'outgoing'
+            context['message_user_id'] = message.to_user.id
+
+        return context
+
+
 
