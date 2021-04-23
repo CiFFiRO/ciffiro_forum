@@ -85,7 +85,7 @@
                           <a href="/message/{{ message.id }}/"> {{ message.subject }}</a>
                       </div>
                       <div class="col">
-                          {{ message.datetime }}
+                          {{ message.datetime|date:"d E Y H:i" }}
                       </div>
                   </div>
             {% endfor %}
