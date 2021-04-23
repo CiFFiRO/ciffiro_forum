@@ -94,6 +94,8 @@ class User(models.Model):
     is_admin = models.IntegerField()
     registration_date = models.DateField()
     last_activity = models.DateTimeField()
+    is_banned = models.IntegerField()
+    is_moderator = models.IntegerField()
 
     class Meta:
         managed = False

@@ -43,7 +43,8 @@
                     </a>
                 </div>
                 <div class="col text-right">
-            {% if is_admin %}
+            {% if is_admin or is_moderator %}
+            {% if not is_banned %}
               <button type="button" class="btn btn-light btn-sm top-buffer-10" id="buttonDeleteThemeId">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
                 <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
@@ -51,6 +52,7 @@
                 </svg>
                   Удалить тему
               </button>
+            {% endif %}
             {% endif %}
                 </div>
             </div>
@@ -65,10 +67,32 @@
                   <div class="row">
                       <div class="col text-left">
                           <a href="/profile/{{ post.user_id }}/"> {{ post.user_name }}</a>
+                          {% if post.user_is_admin %}
+                          <b>(Администратор)</b>
+                          {% elif post.user_is_moderator %}
+                          <b>(Модератор)</b>
+                          {% endif %}
+                          {% if post.user_is_banned %}
+                          <b class="text-danger">Забанен</b>
+                          {% endif %}
                       </div>
-                      <div class="col text-right">
-                          {{ post.datetime }}
+                      <div class="col text-right" style="font-size: small;">
+                          {{ post.datetime|date:"d E Y H:i" }}
                           {% if is_admin %}
+                          <button type="button" class="btn btn-light btn-sm top-buffer-10 left-buffer-10" name="buttonDeletePost" value="{{ post.id }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                </svg>
+              </button>
+                          {% elif is_moderator and not post.user_is_admin and not post.user_is_moderator and not is_banned %}
+                          <button type="button" class="btn btn-light btn-sm top-buffer-10 left-buffer-10" name="buttonDeletePost" value="{{ post.id }}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                </svg>
+              </button>
+                          {% elif is_moderator and post.user_id == user_now_id and not is_banned %}
                           <button type="button" class="btn btn-light btn-sm top-buffer-10 left-buffer-10" name="buttonDeletePost" value="{{ post.id }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
                 <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
@@ -84,13 +108,13 @@
                       </div>
                   </div>
                   {% if post.is_edit %}
-                  <div class="row">
+                  <div class="row" style="font-size: small;">
                       <div class="col">
-                          Последнее исправление {{ post.last_edit }}.
+                          Последнее исправление {{ post.last_edit|date:"d E Y H:i" }}
                       </div>
                   </div>
                   {% endif %}
-                  {% if is_user and post.user_id == user_now_id %}
+                  {% if is_user and post.user_id == user_now_id and not is_banned %}
                   <div class="row">
                       <div class="col">
                       <button type="button" class="btn btn-light btn-sm bottom-buffer " name="buttonEditPost" value="{{ post.id }}">
@@ -107,7 +131,7 @@
           </div>
             {% endfor %}
             {% include 'paginator.html' %}
-            {% if is_user %}
+            {% if is_user and not is_banned %}
             <div class="row">
                 <div class="col text-center">
             {% csrf_token %}

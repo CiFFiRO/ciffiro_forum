@@ -19,12 +19,33 @@ function setup_profile() {
         data.message_subject = this.value;
         updateButtonState();
     });
+
+    let path = window.location.href.split('/');
+    let user_id = path[path.length - 2];
+
     $('#sendButtonId').on('click', function () {
-        let path = window.location.href.split('/');
         data.is_send_message = true;
-        $.post(`/profile/${path[path.length - 2]}/`, data)
+        $.post(`/profile/${user_id}/`, data)
           .done(response => {
             window.location.replace(window.location.origin);
+          }).fail(() => {
+            window.location.replace(window.location.origin);
+          });
+    });
+    $('#banButtonId').on('click', function () {
+        data.is_change_ban = true;
+        $.post(`/profile/${user_id}/`, data)
+          .done(response => {
+            window.location.replace(window.location.href);
+          }).fail(() => {
+            window.location.replace(window.location.origin);
+          });
+    });
+    $('#moderatorButtonId').on('click', function () {
+        data.is_change_moderator = true;
+        $.post(`/profile/${user_id}/`, data)
+          .done(response => {
+            window.location.replace(window.location.href);
           }).fail(() => {
             window.location.replace(window.location.origin);
           });

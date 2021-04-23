@@ -67,8 +67,12 @@
               <div class="col">
                   {{ section.number_posts }}
               </div>
-              <div class="col">
+              <div class="col" style="font-size: small;">
+                  {% if section.number_posts > 0 %}
+                  {{ section.date_last_post|date:"d E Y H:i" }}
+                  {% else %}
                   {{ section.date_last_post }}
+                  {% endif %}
               </div>
           </div>
             {% endfor %}

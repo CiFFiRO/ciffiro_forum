@@ -33,16 +33,39 @@
 {% include head %}
 </div>
 <div class="container"  style="border: 3px solid #ccc;width: 50%;">
+    <div class="row">
+      <div class="col text-left">
+          <a href="/" class="btn btn-light btn-sm top-buffer-10">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+          <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+          </svg>
+              На главную
+          </a>
+      </div>
+  </div>
   <div class="row">
     <div class="col text-center">
       {% csrf_token %}
       <b>{{ user_profile_name }}</b>
     </div>
   </div>
-    {% if user_is_admin %}
+  {% if user_is_admin %}
   <div class="row">
     <div class="col">
     <b>Администратор</b>
+    </div>
+  </div>
+  {% elif user_is_moderator %}
+  <div class="row">
+    <div class="col">
+    <b>Модератор</b>
+    </div>
+  </div>
+  {% endif %}
+  {% if user_is_banned %}
+  <div class="row">
+    <div class="col">
+    <b class="text-danger">Забанен</b>
     </div>
   </div>
   {% endif %}
@@ -58,15 +81,39 @@
   </div>
   <div class="row">
     <div class="col">
-    <b>Зарегистрирован: </b> {{ user_registration_date }}
+    <b>Зарегистрирован: </b> {{ user_registration_date|date:"d E Y" }}
     </div>
   </div>
   <div class="row">
     <div class="col">
-    <b>Последняя активность: </b> {{ user_last_activity }}
+    <b>Последняя активность: </b> {{ user_last_activity|date:"d E Y H:i" }}
     </div>
   </div>
-  {% if is_user and user_now_id != user_id %}
+  {% if is_user and user_now_id != user_id and not user_is_admin and is_admin %}
+  <div class="row">
+    <div class="col text-left">
+      <div class="btn-group btn-group-lg top-buffer-10 bottom-buffer" role="group">
+        <button type="button" class="btn btn-light" id="banButtonId">
+        {% if user_is_banned %}
+          Разбанить
+        {% else %}
+          Забанить
+        {% endif %}
+        </button>
+      </div>
+      <div class="btn-group btn-group-lg top-buffer-10 left-buffer-20 bottom-buffer" role="group">
+        <button type="button" class="btn btn-light" id="moderatorButtonId">
+        {% if user_is_moderator %}
+          Забрать модерку
+        {% else %}
+          Сделать модератором
+        {% endif %}
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% if is_user and user_now_id != user_id and not is_banned %}
   <div class="row">
     <div class="col text-center">
       <input id="messageSubjectId" maxlength="75" class="top-buffer-10" size="52" placeholder="Тема">

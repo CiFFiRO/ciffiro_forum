@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import os
+import mimetypes
+
+mimetypes.add_type("text/javascript", ".js", True)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -148,3 +151,7 @@ EMAIL_HOST_USER = 'templatetestportal@mail.ru'
 EMAIL_HOST_PASSWORD = 'sK372NGf8DgRUtuy5Qt5'
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
+
+SESSION_TIME_LENGTH = 60*60*24
+REGISTRATION_CODE_TIME_LIFE = 60*60*24
+

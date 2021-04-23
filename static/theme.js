@@ -75,7 +75,7 @@ function theme_page_setup() {
             console.log(post_text);
             post_text_node.remove();
             $('#appendTextarea_'+post_id).append(
-            `<textarea id="editedTextId_${post_id}">${post_text}</textarea>`
+            `<textarea id="editedTextId_${post_id}" cols="50" maxlength="500">${post_text}</textarea>`
             );
 
             editButtons[index].onclick = function () {

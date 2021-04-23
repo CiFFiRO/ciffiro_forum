@@ -63,7 +63,7 @@
                     <pre>{{ text }}</pre>
                 </div>
             </div>
-          {% if message_type == "incoming" %}
+          {% if message_type == "incoming" and not is_banned %}
           <div class="row">
             <div class="col text-center">
                 {% csrf_token %}
