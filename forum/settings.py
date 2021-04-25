@@ -82,8 +82,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'forum',
-        'USER': 'CiFFiRO',
-        'PASSWORD': 'BE3FoeZXxWIj7iNyvcWBL0yPqYkqLucP',
+        'USER': '',
+        'PASSWORD': '',
         'HOST': '127.0.0.1',
         'PORT': '3306',
     }
@@ -146,9 +146,9 @@ EMAIL_HOST = 'smtp.mail.ru'
 EMAIL_PORT = 465
 
 # Optional SMTP authentication information for EMAIL_HOST.
-DEFAULT_FROM_EMAIL = 'templatetestportal@mail.ru'
-EMAIL_HOST_USER = 'templatetestportal@mail.ru'
-EMAIL_HOST_PASSWORD = 'sK372NGf8DgRUtuy5Qt5'
+DEFAULT_FROM_EMAIL = ''
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
 
